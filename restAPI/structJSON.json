@@ -1,0 +1,24 @@
+{
+	"code": 0,
+	"predictResult": 
+		{
+			"predict_level_1": {
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB" 
+			}, 
+			"predict_level_2": {
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB" 
+			},
+			"predict_level_3": {
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB",
+				"NUMBER_CLS" : "PROB" 
+			}
+		}
+}

@@ -1,0 +1,9 @@
+version: '3'
+
+services: 
+  rest-api:
+    build: ./restAPI 
+    volumes: 
+      - ./restAPI:/usr/src/app
+    ports:
+      - 5000:80
