@@ -9,6 +9,27 @@ nltk.download("stopwords")
 nltk.download("punkt")
 
 
+
+def getLabelAndDistance(data, dictValue, model_output, neigh, number_neigh=10):
+    # Get predict
+    result_predict = model_output.predict(data)
+    result_predict = result_predict.reshape(result_predict.shape[0],  -1)
+    # Computing distance 
+    distance, index = neigh.kneighbors([result_predict[0]], number_neigh, return_distance=True)
+    dictResult = dict()
+    for i in range(len(index[0])):
+        key = dictValue[index[0][i]]
+        if key not in dictResult.keys():
+            dictResult[key] = [] 
+        dictResult[key].append(1 - distance[0][i])
+    for key, item in dictResult.items():
+        dictResult[key] = str(round(sum(item)/len(item), 2))
+    # maximKey = max(dictResult, key=dictResult.get)
+    # maximKey, dictResult[maximKey], 
+    return dictResult
+
+
+
 def process_text(text):
     # Function processing text for Word2Vec
     tokens = word_tokenize(text.lower())

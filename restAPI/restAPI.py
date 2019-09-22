@@ -2,33 +2,49 @@ import flask, json
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
+from keras.layers import Concatenate, Average, Input
+from keras.models import Model
 from flask_cors import CORS, cross_origin
 from  glob import glob
 from textProcess import *
 from load_param import *
 
 
+path_models = "./models/*"
+
 # Загрузка моделей
 global graph
 graph = tf.get_default_graph()
 models = dict()
-directModel = glob("./models/level*")
+directModel = glob(path_models)
 for direct in directModel:
-    level = direct.split('/')[-1]
     print("Load params ...")
-    modelPred, w2i, le = load_params(direct)
-    models[level] = {
-        "model": modelPred,
-        "w2i": w2i,
-        "le": le
-    }
-    print("Params success from " + level)
+    if 'level' in direct:
+    	level = direct.split('/')[-1]
+    	modelPred, w2i, le = load_params(direct, type_param="level")
+    	models[level] = {
+	        "model": modelPred,
+	        "w2i": w2i,
+	        "le": le
+	    }
+    	print("Params success from " + level)
+    else:
+    	dictWithNeighs = load_params(direct, type_param="neigh")
+    	print("Params success loads from " + direct.split("/")[-1])
+
+# Загрузка объединненой модели
+model_curr_1 = Input(shape=(64,))
+x1 = models["level_1"]["model"].layers[0](model_curr_1)
+model_curr_2 = Input(shape=(64,))
+x2 = models["level_2"]["model"].layers[0](model_curr_2)
+average = Average()([x1, x2])
+model_output = Model(inputs=[model_curr_1, model_curr_2], outputs=average)
+print("All params success loaded")
 
 
-def formationRSP(req):
+def formationRSP(req, thresholder_conf=1.3):
     # Формирование ответа
-    listLevel = ["level_1", "level_2", "level_3", "level_4"]
+    listLevel = ["level_1", "level_2"]
     output = dict()
     result = dict()
     for level in listLevel:
@@ -41,12 +57,50 @@ def formationRSP(req):
                 dParams["le"].inverse_transform(range(len(pred_proba[0]))), 
                 pred_proba[0].astype(str)))
         # clsPred = np.argmax(pred)
-        result["predict_" + level] = json.dumps(pred_class)
+        result[level] = pred_class
         if level == "level_1" and np.argmax(pred_proba) == 0:
             break
-        if max(pred_proba) > 1.3*(sum(pred_proba) - max(pred_proba)):
-            break
-    output["predictResult"] = json.dumps(result)
+        # if max(pred_proba[0]) > thresholder_conf*(sum(pred_proba[0]) - max(pred_proba[0])):
+        #     break
+    if "level_2" in result.keys():
+    	vector_level_1 = preprocessing_text(req["text"], models["level_1"]["w2i"])
+    	vector_level_2 = preprocessing_text(req["text"], models["level_2"]["w2i"])
+    	currTensor = [vector_level_1, vector_level_2]
+    	print("dictWithNeighs.keys()", dictWithNeighs.keys())
+    	maximKey = max(result["level_2"], key=result["level_2"].get)
+    	print("maximKey =", maximKey)
+    	getListParams = dictWithNeighs["cls_" + str(maximKey)]
+    	with graph.as_default():
+	    	dictResult = getLabelAndDistance(currTensor, getListParams['dict'], 
+	    		model_output, getListParams['cls'], number_neigh=10)
+	    	print(dictResult)
+	    	newDict = dict()
+	    	for k, item in dictResult.items():
+		    	if len(k.split(".")) == 3 and len(k.split(".")[-1]) != 0:
+			    	newDict[k.split(".")[-1]] = item
+		    	if len(k.split(".")) > 3 and len(k.split(".")[-2]) != 0 and len(k.split(".")[-1]) != 0:
+			    	newDict[k.split(".")[-2] + "." + k.split(".")[-1]] = item
+	    	result["level_other"] = newDict
+    	# dictLevel_3 = dict()
+    	# dictLevel_4 = dict()
+    	# for k, item in newDict.items():
+	    # 	currListKey = k.split(".")
+	    # 	currItem = item
+	    # 	if len(currListKey[0]) == 0:
+		   #  	continue
+	    # 	if (len(currListKey) >= 1):
+		   #  	if (currListKey[0] in dictLevel_3.keys()) and (dictLevel_3[currListKey[0]] > item):
+			  #   	currItem = dictLevel_3[currListKey[0]]
+		   #  	dictLevel_3[currListKey[0]] = currItem
+	    # 	if (len(currListKey) > 1) and (len(currListKey[-1]) != 0):
+		   #  	if (currListKey[-1] in dictLevel_4.keys()) and (dictLevel_4[currListKey[-1]] > item):
+			  #   	item = dictLevel_4[currListKey[-1]]
+		   #  	dictLevel_4[currListKey[-1]] = item
+    	# if len(dictLevel_3) != 0:
+	    # 	result["level_3"] = dictLevel_3
+    	# if len(dictLevel_4) != 0:
+	    # 	result["level_4"] = dictLevel_4
+    output["predictResult"] = result
     output["code"] = 0
     return output
 
