@@ -14,6 +14,8 @@ def getLabelAndDistance(data, dictValue, model_output, neigh, number_neigh=10):
     # Get predict
     result_predict = model_output.predict(data)
     result_predict = result_predict.reshape(result_predict.shape[0],  -1)
+    print("result_predict =", len(result_predict[0]))
+
     # Computing distance 
     distance, index = neigh.kneighbors([result_predict[0]], number_neigh, return_distance=True)
     dictResult = dict()

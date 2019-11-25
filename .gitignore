@@ -1,0 +1,9 @@
+/notebook/models
+/notebook/.ipynb_checkpoints
+/notebook/new_data
+
+/restAPI/models
+/restAPI/.DS_Store
+/restAPI/__pycache__
+
+/.DS_Store

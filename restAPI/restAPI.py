@@ -57,17 +57,17 @@ def formationRSP(req, thresholder_conf=1.3):
                 dParams["le"].inverse_transform(range(len(pred_proba[0]))), 
                 pred_proba[0].astype(str)))
         # clsPred = np.argmax(pred)
-        result[level] = pred_class
+        result["predict_" + level] = pred_class
         if level == "level_1" and np.argmax(pred_proba) == 0:
             break
         # if max(pred_proba[0]) > thresholder_conf*(sum(pred_proba[0]) - max(pred_proba[0])):
         #     break
-    if "level_2" in result.keys():
+    if "predict_level_2" in result.keys():
     	vector_level_1 = preprocessing_text(req["text"], models["level_1"]["w2i"])
     	vector_level_2 = preprocessing_text(req["text"], models["level_2"]["w2i"])
     	currTensor = [vector_level_1, vector_level_2]
-    	print("dictWithNeighs.keys()", dictWithNeighs.keys())
-    	maximKey = max(result["level_2"], key=result["level_2"].get)
+    	print("currTensor =", currTensor)
+    	maximKey = max(result["predict_level_2"], key=result["predict_level_2"].get)
     	print("maximKey =", maximKey)
     	getListParams = dictWithNeighs["cls_" + str(maximKey)]
     	with graph.as_default():
@@ -80,7 +80,7 @@ def formationRSP(req, thresholder_conf=1.3):
 			    	newDict[k.split(".")[-1]] = item
 		    	if len(k.split(".")) > 3 and len(k.split(".")[-2]) != 0 and len(k.split(".")[-1]) != 0:
 			    	newDict[k.split(".")[-2] + "." + k.split(".")[-1]] = item
-	    	result["level_other"] = newDict
+	    	result["predict_level_other"] = newDict
     	# dictLevel_3 = dict()
     	# dictLevel_4 = dict()
     	# for k, item in newDict.items():
